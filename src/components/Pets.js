@@ -26,6 +26,14 @@ const calculateAge = (dob) => {
 function Pets() {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPet, setSelectedPet] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: '',
+  });
 
   // List of 25 unique dog names
   const dogNames = [
@@ -76,6 +84,31 @@ function Pets() {
     fetchDogImages();
   }, []);
 
+  const handleAdoptClick = (pet) => {
+    setSelectedPet(pet);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedPet(null);
+    setFormData({ name: '', email: '', phone: '', message: '' });
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    console.log('Adoption inquiry submitted:', {
+      pet: selectedPet.name,
+      ...formData,
+    });
+    handleCloseModal();
+  };
+
   return (
     <div className="pets-container">
       <h1>Available Dogs</h1>
@@ -83,11 +116,11 @@ function Pets() {
         {loading
           ? Array(25).fill().map((_, index) => (
               <div key={index} className="pet-card">
-                <div className="pet-card-loading"></div>
+                <div className="image-loading"></div>
                 <h3>Loading...</h3>
                 <p><strong>DOB:</strong> Loading...</p>
                 <p><strong>Age:</strong> Loading...</p>
-                <a href="#" className="adopt-button">Adopt</a>
+                <button className="adopt-button" disabled>Adopt</button>
               </div>
             ))
           : pets.map((pet, index) => (
@@ -97,10 +130,62 @@ function Pets() {
                 dob={pet.dob}
                 age={pet.age}
                 image={pet.image}
-                adoptLink={pet.adoptLink}
+                adoptLink={() => handleAdoptClick(pet)}
               />
             ))}
       </div>
+
+      {showModal && (
+        <div className="adoption-modal">
+          <div className="adoption-modal-content">
+            <button className="modal-close-button" onClick={handleCloseModal}>
+              ×
+            </button>
+            <h2>Adopt {selectedPet?.name}</h2>
+            <form onSubmit={handleFormSubmit}>
+              <label htmlFor="name">Full Name</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleFormChange}
+                required
+                aria-required="true"
+              />
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleFormChange}
+                required
+                aria-required="true"
+              />
+              <label htmlFor="phone">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleFormChange}
+                required
+                aria-required="true"
+              />
+              <label htmlFor="message">Message</label>
+              <textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleFormChange}
+                placeholder="Why would you like to adopt this dog?"
+              />
+              <button type="submit">Submit Inquiry</button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

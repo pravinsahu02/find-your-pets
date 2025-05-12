@@ -1,33 +1,121 @@
 // Home.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 import { Link } from 'react-router-dom';
 
 function Home() {
+  const [featuredPets, setFeaturedPets] = useState([
+    { name: 'Fluffy', image: '', loading: true },
+    { name: 'Bruno', image: '', loading: true },
+    { name: 'Luna', image: '', loading: true },
+  ]);
+  const [whyAdoptImage, setWhyAdoptImage] = useState({ image: '', loading: true });
+  const [carouselImages, setCarouselImages] = useState(
+    Array(10).fill().map((_, index) => ({ id: index, image: '', loading: true }))
+  );
+
+  const fallbackImage = 'https://picsum.photos/300/200?dog,fallback';
+
+  // Fetch featured pets images
+  const fetchFeaturedImages = async (pets) => {
+    const newPets = [...pets];
+    for (let i = 0; i < newPets.length; i++) {
+      try {
+        const response = await fetch('https://dog.ceo/api/breeds/image/random');
+        const data = await response.json();
+        if (data.status === 'success' && data.message) {
+          newPets[i] = { ...newPets[i], image: data.message, loading: false };
+        } else {
+          throw new Error('Invalid API response');
+        }
+      } catch (error) {
+        console.error(`Error fetching featured pet ${i + 1}:`, error);
+        newPets[i] = { ...newPets[i], image: fallbackImage, loading: false };
+      }
+    }
+    return newPets;
+  };
+
+  // Fetch why adopt image
+  const fetchWhyAdoptImage = async () => {
+    try {
+      const response = await fetch('https://dog.ceo/api/breeds/image/random');
+      const data = await response.json();
+      if (data.status === 'success' && data.message) {
+        return { image: data.message, loading: false };
+      } else {
+        throw new Error('Invalid API response');
+      }
+    } catch (error) {
+      console.error('Error fetching why adopt image:', error);
+      return { image: fallbackImage, loading: false };
+    }
+  };
+
+  // Fetch carousel images
+  const fetchCarouselImages = async (images) => {
+    const newImages = [...images];
+    for (let i = 0; i < newImages.length; i++) {
+      try {
+        const response = await fetch('https://dog.ceo/api/breeds/image/random');
+        const data = await response.json();
+        if (data.status === 'success' && data.message) {
+          newImages[i] = { ...newImages[i], image: data.message, loading: false };
+        } else {
+          throw new Error('Invalid API response');
+        }
+      } catch (error) {
+        console.error(`Error fetching carousel image ${i + 1}:`, error);
+        newImages[i] = { ...newImages[i], image: fallbackImage, loading: false };
+      }
+    }
+    return newImages;
+  };
+
+  useEffect(() => {
+    const loadImages = async () => {
+      const newFeaturedPets = await fetchFeaturedImages(featuredPets);
+      const newWhyAdoptImage = await fetchWhyAdoptImage();
+      const newCarouselImages = await fetchCarouselImages(carouselImages);
+
+      setFeaturedPets(newFeaturedPets);
+      setWhyAdoptImage(newWhyAdoptImage);
+      setCarouselImages(newCarouselImages);
+    };
+
+    loadImages();
+  }, []);
+
   return (
     <div className="home-container">
       <section className="hero-section">
         <h1>Your perfect furry friend is just a click away!</h1>
         <p>Adopt, don't shop. Give a homeless dog the love it deserves.</p>
         <div className="featured-pets">
-          <div className="featured-pet">
-            <img src="https://picsum.photos/200/160?dog,fluffy" alt="Fluffy" />
-            <h4>Fluffy</h4>
-          </div>
-          <div className="featured-pet">
-            <img src="https://picsum.photos/200/160?dog,bruno" alt="Bruno" />
-            <h4>Bruno</h4>
-          </div>
-          <div className="featured-pet">
-            <img src="https://picsum.photos/200/160?dog,luna" alt="Luna" />
-            <h4>Luna</h4>
-          </div>
+          {featuredPets.map((pet, index) => (
+            <div key={index} className="featured-pet">
+              {pet.loading ? (
+                <div className="image-loading"></div>
+              ) : (
+                <img src={pet.image} alt={pet.name} className={pet.image === fallbackImage ? 'image-error' : ''} />
+              )}
+              <h4>{pet.name}</h4>
+            </div>
+          ))}
         </div>
       </section>
 
       <section className="why-adopt-section">
         <h2>Why Adopt a Dog?</h2>
-        <img src="https://picsum.photos/300/200?dog,adopt" alt="Why adopt a dog" className="why-adopt-image" />
+        {whyAdoptImage.loading ? (
+          <div className="image-loading"></div>
+        ) : (
+          <img
+            src={whyAdoptImage.image}
+            alt="Why adopt a dog"
+            className={`why-adopt-image ${whyAdoptImage.image === fallbackImage ? 'image-error' : ''}`}
+          />
+        )}
         <ul>
           <li>Save a dog's life and reduce shelter overcrowding</li>
           <li>Enjoy loyal companionship and endless tail wags</li>
@@ -47,21 +135,19 @@ function Home() {
       <section className="carousel-section">
         <h2>More Adorable Dogs</h2>
         <div className="carousel-track">
-          <Link to="/pets">
-            <img src="https://picsum.photos/180/140?dog,1" className="carousel-image" alt="dog1" />
-          </Link>
-          <Link to="/pets">
-            <img src="https://picsum.photos/180/140?dog,2" className="carousel-image" alt="dog2" />
-          </Link>
-          <Link to="/pets">
-            <img src="https://picsum.photos/180/140?dog,3" className="carousel-image" alt="dog3" />
-          </Link>
-          <Link to="/pets">
-            <img src="https://picsum.photos/180/140?dog,4" className="carousel-image" alt="dog4" />
-          </Link>
-          <Link to="/pets">
-            <img src="https://picsum.photos/180/140?dog,5" className="carousel-image" alt="dog5" />
-          </Link>
+          {[...carouselImages, ...carouselImages].map((item, index) => (
+            <Link key={`${item.id}-${index}`} to="/pets">
+              {item.loading ? (
+                <div className="image-loading"></div>
+              ) : (
+                <img
+                  src={item.image}
+                  alt={`Dog ${item.id + 1}`}
+                  className={`carousel-image ${item.image === fallbackImage ? 'image-error' : ''}`}
+                />
+              )}
+            </Link>
+          ))}
         </div>
         <Link to="/pets" className="view-more-link">View All Dogs</Link>
       </section>
